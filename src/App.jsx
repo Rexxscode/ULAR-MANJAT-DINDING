@@ -101,13 +101,11 @@ function App() {
   }, [gameStarted, mpServerPlayers])
 
   useEffect(() => {
-    if (playMode === 'multiplayer' && currentPlayerIndex !== undefined) {
-      if (currentPlayerIndex !== currentPlayer) {
-        setCurrentPlayer(currentPlayerIndex)
-        if (currentPlayerIndex !== myPlayerIndex) {
-          setOtherPlayerMoving(true)
-          setTimeout(() => setOtherPlayerMoving(false), 2000)
-        }
+    if (playMode === 'multiplayer' && currentPlayerIndex !== undefined && currentPlayerIndex !== currentPlayer) {
+      setCurrentPlayer(currentPlayerIndex)
+      if (currentPlayerIndex !== myPlayerIndex) {
+        setOtherPlayerMoving(true)
+        setTimeout(() => setOtherPlayerMoving(false), 2000)
       }
     }
   }, [currentPlayerIndex, playMode, currentPlayer, myPlayerIndex])
@@ -269,18 +267,34 @@ function App() {
       setIsExtraTurn(dice === 6)
       if (!isExtraTurn && dice !== 6) {
         const nextPlayer = (currentPlayer + 1) % players.length
-        setTimeout(() => {
-          setCurrentPlayer(nextPlayer)
+        if (playMode === 'multiplayer' && isHost) {
+          // Host syncs turn to all players
+          syncTurn(nextPlayer)
+          syncGameState({ players: newPlayers, diceValue: dice, lastMove: { player: currentPlayer, from: currentP.position, to: newPosition, dice, type: moveType } })
+          setTimeout(() => {
+            setCurrentPlayer(nextPlayer)
+            setIsExtraTurn(false)
+            setIsAITurn(false)
+          }, 500)
+        } else if (playMode === 'multiplayer' && !isHost) {
+          // Non-host waits for host to sync turn
           setIsExtraTurn(false)
           setIsAITurn(false)
-          if (playMode === 'multiplayer' && isHost) {
-            syncTurn(nextPlayer)
-            syncGameState({ players: newPlayers, diceValue: dice, lastMove: { player: currentPlayer, from: currentP.position, to: newPosition, dice, type: moveType } })
-          }
-        }, 500)
+        } else {
+          // Local mode
+          setTimeout(() => {
+            setCurrentPlayer(nextPlayer)
+            setIsExtraTurn(false)
+            setIsAITurn(false)
+          }, 500)
+        }
       } else if (dice === 6) {
         setIsExtraTurn(true)
         if (settings.soundEnabled) play('move')
+        // If multiplayer, still sync
+        if (playMode === 'multiplayer' && isHost) {
+          syncGameState({ players: newPlayers, diceValue: dice, lastMove: { player: currentPlayer, from: currentP.position, to: newPosition, dice, type: moveType } })
+        }
       }
     }
   }, [players, currentPlayer, isExtraTurn, settings.soundEnabled, play, playMode, isHost, syncTurn, syncGameState])
