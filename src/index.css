@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #f0f9ff;
+  --board-bg: #ffffff;
+  --board-border: #1e3a5f;
+  --cell-odd: #e0f2fe;
+  --cell-even: #ffffff;
+  --snake: #ef4444;
+  --ladder: #22c55e;
+  --player1: #3b82f6;
+  --player2: #f59e0b;
+  --player3: #ec4899;
+  --player4: #8b5cf6;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  min-height: 100vh;
+}
+
