@@ -267,19 +267,21 @@ function App() {
       setIsExtraTurn(dice === 6)
       if (!isExtraTurn && dice !== 6) {
         const nextPlayer = (currentPlayer + 1) % players.length
-        if (playMode === 'multiplayer' && isHost) {
-          // Host syncs turn to all players
-          syncTurn(nextPlayer)
+        if (playMode === 'multiplayer') {
+          // All players update gameState so host can detect and sync
           syncGameState({ players: newPlayers, diceValue: dice, lastMove: { player: currentPlayer, from: currentP.position, to: newPosition, dice, type: moveType } })
-          setTimeout(() => {
-            setCurrentPlayer(nextPlayer)
+          
+          if (isHost) {
+            syncTurn(nextPlayer)
+            setTimeout(() => {
+              setCurrentPlayer(nextPlayer)
+              setIsExtraTurn(false)
+              setIsAITurn(false)
+            }, 500)
+          } else {
             setIsExtraTurn(false)
             setIsAITurn(false)
-          }, 500)
-        } else if (playMode === 'multiplayer' && !isHost) {
-          // Non-host waits for host to sync turn
-          setIsExtraTurn(false)
-          setIsAITurn(false)
+          }
         } else {
           // Local mode
           setTimeout(() => {
@@ -291,8 +293,7 @@ function App() {
       } else if (dice === 6) {
         setIsExtraTurn(true)
         if (settings.soundEnabled) play('move')
-        // If multiplayer, still sync
-        if (playMode === 'multiplayer' && isHost) {
+        if (playMode === 'multiplayer') {
           syncGameState({ players: newPlayers, diceValue: dice, lastMove: { player: currentPlayer, from: currentP.position, to: newPosition, dice, type: moveType } })
         }
       }

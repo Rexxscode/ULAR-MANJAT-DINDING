@@ -144,7 +144,7 @@ export function useMultiplayer() {
     return () => unsubscribe()
   }, [roomCode])
 
-  // Listen for game started
+  // Listen for game started and auto-sync turn after moves
   useEffect(() => {
     if (!roomCode) return
 
@@ -161,11 +161,27 @@ export function useMultiplayer() {
       }
       if (roomData?.gameState) {
         setGameState(roomData.gameState)
+
+        // Host auto-syncs turn after any move
+        if (isHost && roomData.gameState.lastMove && roomData.gameState.lastMove.player !== undefined) {
+          const movePlayer = roomData.gameState.lastMove.player
+          const currentTurn = roomData.currentPlayer
+          
+          // If current turn is still the same as the player who just moved, move to next
+          if (movePlayer === currentTurn && roomData.gameState.lastMove.type !== 'won') {
+            const nextPlayer = (currentTurn + 1) % playersRef.current.length
+            setTimeout(() => {
+              const turnPath = ref(db, `rooms/${roomCode}/currentPlayer`)
+              set(turnPath, nextPlayer)
+              setCurrentPlayerIndex(nextPlayer)
+            }, 600)
+          }
+        }
       }
     })
 
     return () => unsubscribe()
-  }, [roomCode])
+  }, [roomCode, isHost])
 
   const startGame = useCallback(() => {
     if (!roomCode || !isHost) return
