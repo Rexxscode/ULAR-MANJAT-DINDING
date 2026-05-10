@@ -3,14 +3,14 @@ import { getDatabase, ref, set, onValue, push, update, remove, onDisconnect } fr
 
 // Ganti dengan config dari Firebase Console
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  databaseURL: "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
-  projectId: "YOUR_PROJECT",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
-}
+  apiKey: "AIzaSyBDnWkgTeEg7w3AJan62FTaj-9H7pnV5xU",
+  authDomain: "ularmanjatdinding.firebaseapp.com",
+  projectId: "ularmanjatdinding",
+  storageBucket: "ularmanjatdinding.firebasestorage.app",
+  messagingSenderId: "67279210491",
+  appId: "1:67279210491:web:d3498b290ab4a0bff0ad5e",
+  measurementId: "G-VRYKCCTG8K"
+};
 
 const app = initializeApp(firebaseConfig)
 const db = getDatabase(app)
