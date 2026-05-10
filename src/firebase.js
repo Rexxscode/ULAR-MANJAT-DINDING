@@ -5,7 +5,7 @@ import { getDatabase, ref, set, onValue, push, update, remove, onDisconnect } fr
 const firebaseConfig = {
   apiKey: "AIzaSyBDnWkgTeEg7w3AJan62FTaj-9H7pnV5xU",
   authDomain: "ularmanjatdinding.firebaseapp.com",
-  databaseURL: "https://ularmanjatdinding-default-rtdb.firebaseio.com",
+  databaseURL: "https://ularmanjatdinding-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "ularmanjatdinding",
   storageBucket: "ularmanjatdinding.firebasestorage.app",
   messagingSenderId: "67279210491",
