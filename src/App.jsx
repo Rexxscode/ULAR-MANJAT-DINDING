@@ -128,12 +128,33 @@ function App() {
     leaveRoom()
   }
 
+  const [isTransitioning, setIsTransitioning] = useState(false)
+  const [tempRoomCode, setTempRoomCode] = useState(null)
+
   const handleJoinMultiplayer = async (playerData, mode, code) => {
-    setPlayMode('multiplayer')
-    if (mode === 'create') {
-      await createRoom(playerData)
-    } else {
-      await joinRoom(code, playerData)
+    try {
+      setIsTransitioning(true)
+      if (mode === 'create') {
+        const result = await createRoom(playerData)
+        setTempRoomCode(result.roomCode)
+        setTimeout(() => {
+          setIsTransitioning(false)
+          setPlayMode('multiplayer')
+        }, 800)
+        return result
+      } else {
+        const result = await joinRoom(code, playerData)
+        setTempRoomCode(result.roomCode)
+        setTimeout(() => {
+          setIsTransitioning(false)
+          setPlayMode('multiplayer')
+        }, 800)
+        return result
+      }
+    } catch (e) {
+      setIsTransitioning(false)
+      console.error('Error joining room:', e)
+      throw e
     }
   }
 
@@ -284,6 +305,8 @@ function App() {
       <MultiplayerLobby
         onJoinRoom={handleJoinMultiplayer}
         onBack={() => setPlayMode('local')}
+        isTransitioning={isTransitioning}
+        transitionRoomCode={tempRoomCode}
       />
     )
   }

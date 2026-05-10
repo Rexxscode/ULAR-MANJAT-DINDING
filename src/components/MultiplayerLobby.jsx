@@ -2,7 +2,7 @@ import { useState } from 'react'
 import PropTypes from 'prop-types'
 import { PLAYER_COLORS } from '../constants/game.js'
 
-export default function MultiplayerLobby({ onJoinRoom, onBack }) {
+export default function MultiplayerLobby({ onJoinRoom, onBack, isTransitioning, transitionRoomCode }) {
   const [mode, setMode] = useState(null)
   const [playerName, setPlayerName] = useState('')
   const [roomCode, setRoomCode] = useState('')
@@ -10,6 +10,32 @@ export default function MultiplayerLobby({ onJoinRoom, onBack }) {
   const [isJoining, setIsJoining] = useState(false)
   const [error, setError] = useState('')
   const [createdRoomCode, setCreatedRoomCode] = useState(null)
+
+  // Show transition screen with room code
+  if (isTransitioning && transitionRoomCode) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-800 via-slate-900 to-slate-950 flex items-center justify-center p-4">
+        <div className="max-w-md w-full text-center">
+          <div className="text-6xl mb-4 animate-bounce">🎲</div>
+          <h1 className="text-2xl font-black text-white mb-4">Menyiapkan Room...</h1>
+          <div className="bg-green-500/20 border-2 border-green-500 rounded-2xl p-6">
+            <p className="text-green-400 font-bold mb-3">Room Dibuat! 🎉</p>
+            <p className="text-white/70 text-sm mb-3">Kode roommu:</p>
+            <div className="bg-slate-900 px-6 py-4 rounded-xl">
+              <span className="text-4xl font-black text-amber-400 tracking-widest">{transitionRoomCode}</span>
+            </div>
+            <button
+              onClick={() => navigator.clipboard.writeText(transitionRoomCode)}
+              className="mt-3 text-blue-400 text-sm hover:underline"
+            >
+              📋 Salin Kode
+            </button>
+          </div>
+          <p className="text-white/50 mt-6">Tunggu sebentar...</p>
+        </div>
+      </div>
+    )
+  }
 
   const handleCreate = async () => {
     if (!playerName.trim()) {
@@ -193,4 +219,6 @@ export default function MultiplayerLobby({ onJoinRoom, onBack }) {
 MultiplayerLobby.propTypes = {
   onJoinRoom: PropTypes.func.isRequired,
   onBack: PropTypes.func.isRequired,
+  isTransitioning: PropTypes.bool,
+  transitionRoomCode: PropTypes.string,
 }
