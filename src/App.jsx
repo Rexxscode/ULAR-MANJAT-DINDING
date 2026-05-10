@@ -266,40 +266,35 @@ setLastMove({ player: currentPlayer, from: currentP.position, to: newPosition, d
       setPlayers(newPlayers)
 
       if (moveType !== 'won') {
-      setIsExtraTurn(dice === 6)
-      if (!isExtraTurn && dice !== 6) {
-        const nextPlayer = (currentPlayer + 1) % players.length
-        if (playMode === 'multiplayer') {
-          // All players update gameState so host can detect and sync
-          syncGameState({ players: newPlayers, diceValue: dice, lastMove: { player: currentPlayer, from: currentP.position, to: newPosition, dice, type: moveType } })
-          
-          if (isHost) {
-            syncTurn(nextPlayer)
-            setTimeout(() => {
-              setCurrentPlayer(nextPlayer)
-              setIsExtraTurn(false)
-              setIsAITurn(false)
-            }, 500)
-          } else {
-            setIsExtraTurn(false)
-            setIsAITurn(false)
+        const isSix = dice === 6
+        if (isSix) {
+          setIsExtraTurn(true)
+          if (settings.soundEnabled) play('move')
+          if (playMode === 'multiplayer') {
+            syncGameState({ players: newPlayers, diceValue: dice, lastMove: { player: currentPlayer, from: currentP.position, to: newPosition, dice, type: moveType } })
           }
         } else {
-          // Local mode
-          setTimeout(() => {
-            setCurrentPlayer(nextPlayer)
-            setIsExtraTurn(false)
-            setIsAITurn(false)
-          }, 500)
-        }
-      } else if (dice === 6) {
-        setIsExtraTurn(true)
-        if (settings.soundEnabled) play('move')
-        if (playMode === 'multiplayer') {
-          syncGameState({ players: newPlayers, diceValue: dice, lastMove: { player: currentPlayer, from: currentP.position, to: newPosition, dice, type: moveType } })
+          const nextPlayer = (currentPlayer + 1) % players.length
+          setIsExtraTurn(false)
+          if (playMode === 'multiplayer') {
+            syncGameState({ players: newPlayers, diceValue: dice, lastMove: { player: currentPlayer, from: currentP.position, to: newPosition, dice, type: moveType } })
+            if (isHost) {
+              syncTurn(nextPlayer)
+              setTimeout(() => {
+                setCurrentPlayer(nextPlayer)
+                setIsAITurn(false)
+              }, 500)
+            } else {
+              setIsAITurn(false)
+            }
+          } else {
+            setTimeout(() => {
+              setCurrentPlayer(nextPlayer)
+              setIsAITurn(false)
+            }, 500)
+          }
         }
       }
-    }
   }, [players, currentPlayer, isExtraTurn, settings.soundEnabled, play, playMode, isHost, syncTurn, syncGameState])
 
   const handleRollDice = useCallback(() => {
