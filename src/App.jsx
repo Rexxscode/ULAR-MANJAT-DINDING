@@ -5,6 +5,7 @@ import { generateCells, rollDice } from './utils/gameUtils.js'
 import { getAIDelay } from './utils/aiHelper.js'
 import { useLocalStorage } from './hooks/useLocalStorage.js'
 import { useSound } from './hooks/useSound.js'
+import { useMultiplayer } from './hooks/useMultiplayer.js'
 import Confetti from './components/Confetti.jsx'
 import BoardCell from './components/BoardCell.jsx'
 import PlayerCard from './components/PlayerCard.jsx'
@@ -12,6 +13,8 @@ import Lobby from './components/Lobby.jsx'
 import WinnerModal from './components/WinnerModal.jsx'
 import SettingsModal from './components/SettingsModal.jsx'
 import DiceDots from './components/DiceDots.jsx'
+import MultiplayerLobby from './components/MultiplayerLobby.jsx'
+import WaitingRoom from './components/WaitingRoom.jsx'
 
 const SNAKE_LIST = Object.entries(SNAKES).map(([from, to]) => ({ from: Number(from), to }))
 const LADDER_LIST = Object.entries(LADDERS).map(([from, to]) => ({ from: Number(from), to }))
@@ -45,6 +48,11 @@ function App() {
   const [prevPosition, setPrevPosition] = useState({})
   const [showSettings, setShowSettings] = useState(false)
   const [isAITurn, setIsAITurn] = useState(false)
+  const [playMode, setPlayMode] = useState('local')
+  const [mpRoomCode, setMpRoomCode] = useState(null)
+  const [mpPlayers, setMpPlayers] = useState([])
+
+  const { roomCode, players: mpServerPlayers, isHost, gameStarted, createRoom, joinRoom, startGame: mpStartGame, updateGameState, nextTurn: mpNextTurn, sendMove: mpSendMove, leaveRoom } = useMultiplayer()
 
   const { play, setEnabled } = useSound()
   const aiTimeoutRef = useRef(null)
@@ -60,6 +68,29 @@ function App() {
   useEffect(() => {
     setSavedSettings(settings)
   }, [settings, setSavedSettings])
+
+  useEffect(() => {
+    if (mpServerPlayers.length > 0) {
+      setMpPlayers(mpServerPlayers)
+    }
+  }, [mpServerPlayers])
+
+  useEffect(() => {
+    if (roomCode) {
+      setMpRoomCode(roomCode)
+    }
+  }, [roomCode])
+
+  useEffect(() => {
+    if (gameStarted) {
+      setGameState('playing')
+      setGameStatus('playing')
+      setCurrentPlayer(0)
+      if (mpServerPlayers.length > 0) {
+        setPlayers(mpServerPlayers.map(p => ({ ...p, position: 1 })))
+      }
+    }
+  }, [gameStarted, mpServerPlayers])
 
   const cells = generateCells()
 
@@ -91,6 +122,30 @@ function App() {
     setShowConfetti(false)
     setIsExtraTurn(false)
     setIsAITurn(false)
+    setPlayMode('local')
+    setMpRoomCode(null)
+    setMpPlayers([])
+    leaveRoom()
+  }
+
+  const handleJoinMultiplayer = async (playerData, mode, code) => {
+    setPlayMode('multiplayer')
+    if (mode === 'create') {
+      await createRoom(playerData)
+    } else {
+      await joinRoom(code, playerData)
+    }
+  }
+
+  const handleStartMultiplayer = () => {
+    mpStartGame()
+  }
+
+  const handleLeaveMultiplayer = () => {
+    leaveRoom()
+    setPlayMode('local')
+    setMpRoomCode(null)
+    setMpPlayers([])
   }
 
   const playAgain = () => {
@@ -224,6 +279,27 @@ function App() {
 
   const isCurrentPlayerAI = players[currentPlayer]?.isAI
 
+  if (playMode === 'mpline') {
+    return (
+      <MultiplayerLobby
+        onJoinRoom={handleJoinMultiplayer}
+        onBack={() => setPlayMode('local')}
+      />
+    )
+  }
+
+  if (playMode === 'multiplayer' && !gameStarted) {
+    return (
+      <WaitingRoom
+        roomCode={mpRoomCode || roomCode}
+        players={mpPlayers}
+        isHost={isHost}
+        onStartGame={handleStartMultiplayer}
+        onLeave={handleLeaveMultiplayer}
+      />
+    )
+  }
+
   if (gameState === 'lobby') {
     return (
       <Lobby
@@ -231,6 +307,7 @@ function App() {
         setPlayers={setPlayers}
         onStartGame={startGame}
         onOpenSettings={() => setShowSettings(true)}
+        onOpenMultiplayer={() => setPlayMode('mpline')}
       />
     )
   }

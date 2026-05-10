@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types'
 import { PLAYER_COLORS, PLAYER_COLORS_LIST } from '../constants/game.js'
 
-export default function Lobby({ players, setPlayers, onStartGame, onOpenSettings }) {
+export default function Lobby({ players, setPlayers, onStartGame, onOpenSettings, onOpenMultiplayer }) {
   const addPlayer = () => {
     if (players.length < 4) {
       const newColor = PLAYER_COLORS_LIST.find(
@@ -110,27 +110,41 @@ export default function Lobby({ players, setPlayers, onStartGame, onOpenSettings
           <div className="flex gap-3 mt-4">
             <button
               onClick={onOpenSettings}
-              className="flex-1 py-3 bg-slate-600/80 hover:bg-slate-600 text-white rounded-xl font-bold transition-all hover:scale-[1.02] active:scale-[0.98]"
+              className="px-4 py-3 bg-slate-600/80 hover:bg-slate-600 text-white rounded-xl font-bold transition-all hover:scale-[1.02] active:scale-[0.98]"
             >
-              ⚙️ Pengaturan
+              ⚙️
+            </button>
+            <button
+              onClick={onOpenMultiplayer}
+              className="flex-1 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-xl font-bold hover:from-blue-400 hover:to-cyan-400 transition-all hover:scale-[1.02] active:scale-[0.98]"
+            >
+              🌐 Multiplayer
             </button>
             <button
               onClick={onStartGame}
               disabled={players.length < 2}
-              className="flex-[2] py-3 bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 text-white rounded-xl font-black text-lg hover:from-green-400 hover:via-emerald-400 hover:to-teal-400 shadow-xl transform hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="py-3 px-6 bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 text-white rounded-xl font-black hover:from-green-400 hover:via-emerald-400 hover:to-teal-400 shadow-xl transform hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              🚀 MULAI
+              🚀
             </button>
           </div>
         </div>
 
         <div className="text-center mt-8 text-white/50 text-sm">
           <p>2-4 pemain • Sampai kotak 100 untuk menang</p>
-          <p className="mt-1">🤖 = AI Player (otomatis bermain)</p>
+          <p className="mt-1">🤖 = AI Player | 🌐 = Main bareng teman (online)</p>
         </div>
       </div>
     </div>
   )
+}
+
+Lobby.propTypes = {
+  players: PropTypes.array.isRequired,
+  setPlayers: PropTypes.func.isRequired,
+  onStartGame: PropTypes.func.isRequired,
+  onOpenSettings: PropTypes.func,
+  onOpenMultiplayer: PropTypes.func,
 }
 
 Lobby.propTypes = {
