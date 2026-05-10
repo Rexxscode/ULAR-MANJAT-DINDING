@@ -9,6 +9,7 @@ export default function MultiplayerLobby({ onJoinRoom, onBack }) {
   const [selectedColor, setSelectedColor] = useState('blue')
   const [isJoining, setIsJoining] = useState(false)
   const [error, setError] = useState('')
+  const [createdRoomCode, setCreatedRoomCode] = useState(null)
 
   const handleCreate = async () => {
     if (!playerName.trim()) {
@@ -18,11 +19,14 @@ export default function MultiplayerLobby({ onJoinRoom, onBack }) {
     setIsJoining(true)
     setError('')
     try {
-      await onJoinRoom({
+      const result = await onJoinRoom({
         name: playerName,
         color: selectedColor,
         isAI: false
       }, 'create')
+      if (result.roomCode) {
+        setCreatedRoomCode(result.roomCode)
+      }
     } catch (e) {
       setError(e.message)
     }
@@ -164,6 +168,23 @@ export default function MultiplayerLobby({ onJoinRoom, onBack }) {
         >
           ← Kembali
         </button>
+
+        {createdRoomCode && (
+          <div className="mt-6 bg-green-500/20 border-2 border-green-500 rounded-2xl p-6 text-center">
+            <p className="text-green-400 font-bold mb-2">Room Dibuat! 🎉</p>
+            <p className="text-white/70 text-sm mb-3">Bagikan kode ini ke teman:</p>
+            <div className="bg-slate-900 px-6 py-4 rounded-xl">
+              <span className="text-4xl font-black text-amber-400 tracking-widest">{createdRoomCode}</span>
+            </div>
+            <button
+              onClick={() => navigator.clipboard.writeText(createdRoomCode)}
+              className="mt-3 text-blue-400 text-sm hover:underline"
+            >
+              📋 Salin Kode
+            </button>
+            <p className="text-white/50 text-xs mt-4">Tunggu teman join...</p>
+          </div>
+        )}
       </div>
     </div>
   )
