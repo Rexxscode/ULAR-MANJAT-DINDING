@@ -1,207 +1,216 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import Pusher from 'pusher-js'
+import { db, ref, set, onValue, push, remove, onDisconnect } from '../firebase'
 
-// Demo credentials - ganti dengan punya kamu dari pusher.com
-const PUSHER_KEY = 'demo'
-const PUSHER_CLUSTER = 'mt1'
+function generateRoomCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  let code = ''
+  for (let i = 0; i < 6; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  return code
+}
 
-let pusher = null
-let channel = null
+function generatePlayerId() {
+  return `player-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+}
 
 export function useMultiplayer() {
-  const [isConnected, setIsConnected] = useState(false)
+  const [isConnected, setIsConnected] = useState(true)
   const [roomCode, setRoomCode] = useState(null)
   const [players, setPlayers] = useState([])
   const [isHost, setIsHost] = useState(false)
   const [error, setError] = useState(null)
   const [gameStarted, setGameStarted] = useState(false)
-  const [myPlayerInfo, setMyPlayerInfo] = useState(null)
 
+  const myPlayerId = useRef(null)
+  const roomRef = useRef(null)
   const playersRef = useRef([])
 
-  useEffect(() => {
-    if (!pusher) {
-      pusher = new Pusher(PUSHER_KEY, {
-        cluster: PUSHER_CLUSTER,
-        forceTLS: true
-      })
-    }
-
-    return () => {
-      if (channel) {
-        channel.unbind_all()
-        channel.unsubscribe()
-        channel = null
-      }
-    }
+  const generateCode = useCallback(() => {
+    return generateRoomCode()
   }, [])
-
-  const subscribeToRoom = useCallback((code) => {
-    if (channel) {
-      channel.unbind_all()
-      channel.unsubscribe()
-    }
-
-    const channelName = `game-${code.toUpperCase()}`
-    channel = pusher.subscribe(channelName)
-
-    channel.bind('player-joined', (data) => {
-      const currentPlayers = playersRef.current
-      const exists = currentPlayers.some(p => p.id === data.player.id)
-      if (!exists) {
-        const updated = [...currentPlayers, data.player]
-        playersRef.current = updated
-        setPlayers(updated)
-      }
-    })
-
-    channel.bind('player-left', (data) => {
-      const updated = playersRef.current.filter(p => p.id !== data.playerId)
-      playersRef.current = updated
-      setPlayers(updated)
-    })
-
-    channel.bind('game-started', () => {
-      setGameStarted(true)
-    })
-
-    channel.bind('player-moved', (data) => {
-      window.dispatchEvent(new CustomEvent('syncMove', { detail: data }))
-    })
-
-    channel.bind('turn-changed', (data) => {
-      window.dispatchEvent(new CustomEvent('syncTurn', { detail: data.nextPlayerIndex }))
-    })
-
-    channel.bind('game-state-updated', (data) => {
-      window.dispatchEvent(new CustomEvent('syncGameState', { detail: data }))
-    })
-
-    channel.bind('host-changed', (data) => {
-      if (data.hostId === myPlayerInfo?.id) {
-        setIsHost(true)
-      }
-    })
-  }, [myPlayerInfo])
-
-  const generateRoomCode = () => {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-    let code = ''
-    for (let i = 0; i < 6; i++) {
-      code += chars.charAt(Math.floor(Math.random() * chars.length))
-    }
-    return code
-  }
 
   const createRoom = useCallback((playerData) => {
     return new Promise((resolve, reject) => {
       try {
-        const code = generateRoomCode()
-        const playerWithId = {
-          ...playerData,
-          id: `player-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          socketId: Date.now()
+        const code = generateCode()
+        const playerId = generatePlayerId()
+        myPlayerId.current = playerId
+
+        const roomData = {
+          code,
+          hostId: playerId,
+          gameStarted: false,
+          createdAt: Date.now()
         }
 
-        setMyPlayerInfo(playerWithId)
-        playersRef.current = [playerWithId]
-        setPlayers([playerWithId])
-        setRoomCode(code)
-        setIsHost(true)
-        setError(null)
+        const playerDataWithId = {
+          ...playerData,
+          id: playerId,
+          position: 1,
+          isAI: false
+        }
 
-        subscribeToRoom(code)
+        const roomRefPath = ref(db, `rooms/${code}`)
+        set(roomRefPath, roomData).then(() => {
+          const playersRefPath = ref(db, `rooms/${code}/players/${playerId}`)
+          set(playersRefPath, playerDataWithId).then(() => {
+            setRoomCode(code)
+            setIsHost(true)
+            setPlayers([playerDataWithId])
+            playersRef.current = [playerDataWithId]
+            setError(null)
+            roomRef.current = code
 
-        resolve({ success: true, roomCode: code, players: [playerWithId] })
+            // Setup disconnect handler
+            onDisconnect(ref(db, `rooms/${code}/players/${playerId}`)).remove()
+
+            resolve({ success: true, roomCode: code, players: [playerDataWithId] })
+          })
+        }).catch(reject)
       } catch (e) {
         setError(e.message)
         reject(e)
       }
     })
-  }, [subscribeToRoom])
+  }, [generateCode])
 
   const joinRoom = useCallback((code, playerData) => {
     return new Promise((resolve, reject) => {
       try {
         const codeUpper = code.toUpperCase()
-        const playerWithId = {
+        const playerId = generatePlayerId()
+        myPlayerId.current = playerId
+
+        const playerDataWithId = {
           ...playerData,
-          id: `player-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          socketId: Date.now()
+          id: playerId,
+          position: 1,
+          isAI: false
         }
 
-        setMyPlayerInfo(playerWithId)
-        setRoomCode(codeUpper)
-        setIsHost(false)
-        setError(null)
+        const roomPath = ref(db, `rooms/${codeUpper}`)
+        
+        onValue(roomPath, (snapshot) => {
+          const roomData = snapshot.val()
+          if (!roomData) {
+            setError('Room tidak ditemukan')
+            reject(new Error('Room tidak ditemukan'))
+            return
+          }
 
-        subscribeToRoom(codeUpper)
+          if (roomData.players && Object.keys(roomData.players).length >= 4) {
+            setError('Room sudah penuh')
+            reject(new Error('Room sudah penuh'))
+            return
+          }
 
-        // Trigger player joined event via server function would be needed
-        // For demo, we'll simulate it
-        setPlayers(prev => {
-          const updated = [...prev, playerWithId]
-          playersRef.current = updated
-          return updated
-        })
+          const playersPath = ref(db, `rooms/${codeUpper}/players/${playerId}`)
+          set(playersPath, playerDataWithId).then(() => {
+            setRoomCode(codeUpper)
+            setIsHost(false)
+            setError(null)
+            roomRef.current = codeUpper
 
-        // Broadcast to other players (via client events - not ideal for production)
-        if (channel) {
-          channel.trigger('client-player-joined', { player: playerWithId })
-        }
+            // Setup disconnect handler
+            onDisconnect(playersPath).remove()
 
-        resolve({ success: true, roomCode: codeUpper, players: playersRef.current })
+            resolve({ success: true, roomCode: codeUpper, players: [...(roomData.players ? Object.values(roomData.players) : []), playerDataWithId] })
+          }).catch(reject)
+        }, { onlyOnce: true })
       } catch (e) {
         setError(e.message)
         reject(e)
       }
     })
-  }, [subscribeToRoom])
+  }, [])
+
+  // Listen for players changes
+  useEffect(() => {
+    if (!roomCode) return
+
+    const playersPath = ref(db, `rooms/${roomCode}/players`)
+    const unsubscribe = onValue(playersPath, (snapshot) => {
+      const playersData = snapshot.val()
+      if (playersData) {
+        const playersList = Object.values(playersData)
+        playersRef.current = playersList
+        setPlayers(playersList)
+      }
+    })
+
+    return () => unsubscribe()
+  }, [roomCode])
+
+  // Listen for game started
+  useEffect(() => {
+    if (!roomCode) return
+
+    const roomPath = ref(db, `rooms/${roomCode}`)
+    const unsubscribe = onValue(roomPath, (snapshot) => {
+      const roomData = snapshot.val()
+      if (roomData?.gameStarted) {
+        setGameStarted(true)
+      } else {
+        setGameStarted(false)
+      }
+    })
+
+    return () => unsubscribe()
+  }, [roomCode])
 
   const startGame = useCallback(() => {
-    if (channel && roomCode) {
-      channel.trigger('game-started', {})
-      setGameStarted(true)
-    }
-  }, [channel, roomCode])
+    if (!roomCode || !isHost) return
+
+    const roomPath = ref(db, `rooms/${roomCode}`)
+    update(roomPath, { gameStarted: true })
+    setGameStarted(true)
+  }, [roomCode, isHost])
 
   const updateGameState = useCallback((gameState) => {
-    if (channel) {
-      channel.trigger('game-state-updated', gameState)
-    }
-  }, [channel])
+    if (!roomCode || !isHost) return
+
+    const gameStatePath = ref(db, `rooms/${roomCode}/gameState`)
+    set(gameStatePath, gameState)
+  }, [roomCode, isHost])
 
   const nextTurn = useCallback((nextPlayerIndex) => {
-    if (channel) {
-      channel.trigger('turn-changed', { nextPlayerIndex })
-    }
-  }, [channel])
+    if (!roomCode || !isHost) return
+
+    const turnPath = ref(db, `rooms/${roomCode}/currentPlayer`)
+    set(turnPath, nextPlayerIndex)
+  }, [roomCode, isHost])
 
   const sendMove = useCallback((moveData) => {
-    if (channel) {
-      channel.trigger('player-moved', moveData)
-    }
-  }, [channel])
+    if (!roomCode) return
+
+    const movesPath = ref(db, `rooms/${roomCode}/moves`)
+    push(movesPath, moveData)
+  }, [roomCode])
 
   const leaveRoom = useCallback(() => {
-    if (channel && myPlayerInfo) {
-      channel.trigger('player-left', { playerId: myPlayerInfo.id })
+    if (roomCode && myPlayerId.current) {
+      const playerPath = ref(db, `rooms/${roomCode}/players/${myPlayerId.current}`)
+      remove(playerPath)
+
+      // If no more players, clean up room
+      if (isHost) {
+        const roomPath = ref(db, `rooms/${roomCode}`)
+        remove(roomPath)
+      }
     }
-    if (channel) {
-      channel.unbind_all()
-      channel.unsubscribe()
-      channel = null
-    }
+
     setRoomCode(null)
     setPlayers([])
     setIsHost(false)
     setGameStarted(false)
-    setMyPlayerInfo(null)
+    myPlayerId.current = null
     playersRef.current = []
-  }, [channel, myPlayerInfo])
+    roomRef.current = null
+  }, [roomCode, isHost])
 
   return {
-    isConnected: !!pusher,
+    isConnected,
     roomCode,
     players,
     isHost,
