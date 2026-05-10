@@ -51,8 +51,10 @@ function App() {
   const [playMode, setPlayMode] = useState('local')
   const [mpRoomCode, setMpRoomCode] = useState(null)
   const [mpPlayers, setMpPlayers] = useState([])
+  const [myPlayerIndex, setMyPlayerIndex] = useState(0)
+  const [otherPlayerMoving, setOtherPlayerMoving] = useState(false)
 
-  const { roomCode, players: mpServerPlayers, isHost, gameStarted, createRoom, joinRoom, startGame: mpStartGame, updateGameState, nextTurn: mpNextTurn, sendMove: mpSendMove, leaveRoom } = useMultiplayer()
+  const { roomCode, players: mpServerPlayers, isHost, gameStarted, currentPlayerIndex, gameState: mpGameState, createRoom, joinRoom, startGame: mpStartGame, updateGameState, nextTurn: mpNextTurn, sendMove: mpSendMove, leaveRoom, syncTurn, syncGameState } = useMultiplayer()
 
   const { play, setEnabled } = useSound()
   const aiTimeoutRef = useRef(null)
@@ -91,6 +93,26 @@ function App() {
       }
     }
   }, [gameStarted, mpServerPlayers])
+
+  useEffect(() => {
+    if (playMode === 'multiplayer' && currentPlayerIndex !== undefined) {
+      if (currentPlayerIndex !== currentPlayer) {
+        setCurrentPlayer(currentPlayerIndex)
+        if (currentPlayerIndex !== myPlayerIndex) {
+          setOtherPlayerMoving(true)
+          setTimeout(() => setOtherPlayerMoving(false), 2000)
+        }
+      }
+    }
+  }, [currentPlayerIndex, playMode, currentPlayer, myPlayerIndex])
+
+  useEffect(() => {
+    if (playMode === 'multiplayer' && mpGameState) {
+      setPlayers(mpGameState.players || players)
+      setDiceValue(mpGameState.diceValue)
+      setLastMove(mpGameState.lastMove)
+    }
+  }, [mpGameState, playMode])
 
   const cells = generateCells()
 
@@ -159,6 +181,8 @@ function App() {
   }
 
   const handleStartMultiplayer = () => {
+    setMyPlayerIndex(0)
+    syncTurn(0)
     mpStartGame()
   }
 
@@ -238,18 +262,22 @@ function App() {
     if (moveType !== 'won') {
       setIsExtraTurn(dice === 6)
       if (!isExtraTurn && dice !== 6) {
+        const nextPlayer = (currentPlayer + 1) % players.length
         setTimeout(() => {
-          const nextPlayer = (currentPlayer + 1) % players.length
           setCurrentPlayer(nextPlayer)
           setIsExtraTurn(false)
           setIsAITurn(false)
+          if (playMode === 'multiplayer' && isHost) {
+            syncTurn(nextPlayer)
+            syncGameState({ players: newPlayers, diceValue: dice, lastMove: { player: currentPlayer, from: currentP.position, to: newPosition, dice, type: moveType } })
+          }
         }, 500)
       } else if (dice === 6) {
         setIsExtraTurn(true)
         if (settings.soundEnabled) play('move')
       }
     }
-  }, [players, currentPlayer, isExtraTurn, settings.soundEnabled, play])
+  }, [players, currentPlayer, isExtraTurn, settings.soundEnabled, play, playMode, isHost, syncTurn, syncGameState])
 
   const handleRollDice = useCallback(() => {
     if (gameStatus !== 'playing') return
@@ -442,7 +470,7 @@ function App() {
           </div>
         </div>
 
-        {!isRolling && gameStatus === 'playing' && !isCurrentPlayerAI && (
+        {!isRolling && gameStatus === 'playing' && !isCurrentPlayerAI && (playMode !== 'multiplayer' || currentPlayer === myPlayerIndex) && (
           <div className="flex justify-center mb-3">
             <button
               onClick={handleRollDice}
@@ -450,6 +478,14 @@ function App() {
             >
               🎲 LEMPAR DADU 🎲
             </button>
+          </div>
+        )}
+
+        {playMode === 'multiplayer' && !isRolling && gameStatus === 'playing' && currentPlayer !== myPlayerIndex && (
+          <div className="flex justify-center mb-3">
+            <div className="px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl text-white font-bold animate-pulse">
+              ⏳ Giliran {players[currentPlayer]?.name}...
+            </div>
           </div>
         )}
 

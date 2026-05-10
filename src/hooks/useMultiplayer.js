@@ -21,6 +21,8 @@ export function useMultiplayer() {
   const [isHost, setIsHost] = useState(false)
   const [error, setError] = useState(null)
   const [gameStarted, setGameStarted] = useState(false)
+  const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0)
+  const [gameState, setGameState] = useState(null)
 
   const myPlayerId = useRef(null)
   const roomRef = useRef(null)
@@ -154,6 +156,12 @@ export function useMultiplayer() {
       } else {
         setGameStarted(false)
       }
+      if (roomData?.currentPlayer !== undefined) {
+        setCurrentPlayerIndex(roomData.currentPlayer)
+      }
+      if (roomData?.gameState) {
+        setGameState(roomData.gameState)
+      }
     })
 
     return () => unsubscribe()
@@ -209,6 +217,20 @@ export function useMultiplayer() {
     roomRef.current = null
   }, [roomCode, isHost])
 
+  const syncTurn = useCallback((index) => {
+    if (!roomCode) return
+    const turnPath = ref(db, `rooms/${roomCode}/currentPlayer`)
+    set(turnPath, index)
+    setCurrentPlayerIndex(index)
+  }, [roomCode])
+
+  const syncGameState = useCallback((state) => {
+    if (!roomCode) return
+    const gameStatePath = ref(db, `rooms/${roomCode}/gameState`)
+    set(gameStatePath, state)
+    setGameState(state)
+  }, [roomCode])
+
   return {
     isConnected,
     roomCode,
@@ -216,12 +238,16 @@ export function useMultiplayer() {
     isHost,
     error,
     gameStarted,
+    currentPlayerIndex,
+    gameState,
     createRoom,
     joinRoom,
     startGame,
     updateGameState,
     nextTurn,
     sendMove,
-    leaveRoom
+    leaveRoom,
+    syncTurn,
+    syncGameState
   }
 }
