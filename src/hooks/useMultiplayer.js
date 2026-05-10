@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { db, ref, set, onValue, push, remove, onDisconnect } from '../firebase'
+import { db, ref, set, onValue, push, update, remove, onDisconnect } from '../firebase'
 
 function generateRoomCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
