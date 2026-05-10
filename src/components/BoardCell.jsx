@@ -10,12 +10,25 @@ const PLAYER_COLOR_MAP = {
   cyan: { bg: 'bg-cyan-500', ring: 'ring-cyan-300', shadow: 'shadow-cyan-500/50' },
 }
 
-export default function BoardCell({ number, row, playersHere, onMoving, isFromCell }) {
+export default function BoardCell({ number, row, playersHere, onMoving, isFromCell, moveType, prevMoveType }) {
   const isSnakeStart = SNAKES[number]
   const isLadderStart = LADDERS[number]
   const isStart = number === 1
   const isEnd = number === WINNING_POSITION
   const isEven = number % 2 === 0
+
+  // Animations
+  const isLadderMove = moveType === 'ladder' && playersHere.length > 0
+  const isSnakeMove = moveType === 'snake' && playersHere.length > 0
+  
+  let playerAnimation = ''
+  if (isLadderMove) {
+    playerAnimation = 'animate-bounce-jump'
+  } else if (isSnakeMove) {
+    playerAnimation = 'animate-shake-down'
+  } else if (onMoving !== null && playersHere.length > 0) {
+    playerAnimation = 'animate-bounce'
+  }
 
   let bgClass = isEven
     ? 'bg-gradient-to-br from-amber-100 to-yellow-200'
@@ -41,6 +54,10 @@ export default function BoardCell({ number, row, playersHere, onMoving, isFromCe
     bgClass = 'bg-gradient-to-br from-lime-200 via-green-300 to-emerald-400'
     borderType = 'border-green-500'
   }
+
+  // Special animation for ladder destination
+  const ladderGlow = isLadderMove ? 'ring-4 ring-green-400 shadow-green-400/50' : ''
+  const snakeShake = isSnakeMove ? 'ring-4 ring-red-400 animate-pulse' : ''
 
   const getPlayerColor = (color) => PLAYER_COLOR_MAP[color] || PLAYER_COLOR_MAP.blue
 
@@ -77,12 +94,18 @@ export default function BoardCell({ number, row, playersHere, onMoving, isFromCe
       {playersHere.length > 0 && (
         <div className="absolute inset-0 flex items-center justify-center">
           {playersHere.length === 1 ? (
-            <div className={`relative ${onMoving === playersHere[0] ? 'animate-bounce' : ''}`}>
-              <div className={`w-5 h-5 md:w-7 md:h-7 lg:w-8 lg:h-8 rounded-full border-2 border-white shadow-lg flex items-center justify-center ${getPlayerColor(playersHere[0].color).bg} ${getPlayerColor(playersHere[0].color).shadow}`}>
+            <div className={`relative ${playerAnimation}`}>
+              <div className={`w-5 h-5 md:w-7 md:h-7 lg:w-8 lg:h-8 rounded-full border-2 border-white shadow-lg flex items-center justify-center ${getPlayerColor(playersHere[0].color).bg} ${getPlayerColor(playersHere[0].color).shadow} ${ladderGlow} ${snakeShake}`}>
                 <span className="text-white text-[6px] md:text-[8px] lg:text-[10px] font-bold">{playersHere[0].name.charAt(0)}</span>
               </div>
-              {onMoving === playersHere[0] && (
+              {onMoving === playersHere[0] && !isLadderMove && !isSnakeMove && (
                 <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full animate-ping"></div>
+              )}
+              {isLadderMove && (
+                <div className="absolute -top-2 text-xs">⬆️</div>
+              )}
+              {isSnakeMove && (
+                <div className="absolute -top-2 text-xs">⬇️</div>
               )}
             </div>
           ) : (
@@ -116,4 +139,6 @@ BoardCell.propTypes = {
   playersHere: PropTypes.array.isRequired,
   onMoving: PropTypes.number,
   isFromCell: PropTypes.bool,
+  moveType: PropTypes.string,
+  prevMoveType: PropTypes.string,
 }

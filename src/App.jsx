@@ -53,6 +53,7 @@ function App() {
   const [mpPlayers, setMpPlayers] = useState([])
   const [myPlayerIndex, setMyPlayerIndex] = useState(0)
   const [otherPlayerMoving, setOtherPlayerMoving] = useState(false)
+  const [lastMoveType, setLastMoveType] = useState(null)
 
   const { roomCode, players: mpServerPlayers, isHost, gameStarted, currentPlayerIndex, gameState: mpGameState, myPlayerId, createRoom, joinRoom, startGame: mpStartGame, updateGameState, nextTurn: mpNextTurn, sendMove: mpSendMove, leaveRoom, syncTurn, syncGameState } = useMultiplayer()
 
@@ -257,13 +258,14 @@ function App() {
       setMovingPlayer(null)
     }, 600)
 
-    setLastMove({ player: currentPlayer, from: currentP.position, to: newPosition, dice, type: moveType })
+setLastMove({ player: currentPlayer, from: currentP.position, to: newPosition, dice, type: moveType })
+      setLastMoveType(moveType)
 
-    const newPlayers = [...players]
-    newPlayers[currentPlayer] = { ...currentP, position: newPosition }
-    setPlayers(newPlayers)
+      const newPlayers = [...players]
+      newPlayers[currentPlayer] = { ...currentP, position: newPosition }
+      setPlayers(newPlayers)
 
-    if (moveType !== 'won') {
+      if (moveType !== 'won') {
       setIsExtraTurn(dice === 6)
       if (!isExtraTurn && dice !== 6) {
         const nextPlayer = (currentPlayer + 1) % players.length
@@ -393,6 +395,9 @@ function App() {
         .animate-glow { animation: pulse-glow 2s ease-in-out infinite; }
         @keyframes shake { 0%, 100% { transform: rotate(0deg); } 25% { transform: rotate(-5deg); } 75% { transform: rotate(5deg); } }
         .animate-shake { animation: shake 0.5s ease-in-out; }
+        @keyframes bounce-in-up { 0% { transform: translateY(20px); opacity: 0; } 50% { transform: translateY(-10px); } 100% { transform: translateY(0); opacity: 1; } }
+        @keyframes shake-down { 0%, 100% { transform: translateY(0); } 25% { transform: translateY(8px) rotate(3deg); } 75% { transform: translateY(8px) rotate(-3deg); } }
+        @keyframes bounce-jump { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
       `}</style>
 
       <SettingsModal
@@ -485,6 +490,8 @@ function App() {
                   playersHere={getPlayersAtCell(number)}
                   onMoving={movingPlayer}
                   isFromCell={movingPlayer !== null && prevPosition[movingPlayer] === number}
+                  moveType={lastMove && lastMove.to === number ? lastMove.type : null}
+                  prevMoveType={lastMove && lastMove.from === number ? lastMove.type : null}
                 />
               ))}
             </div>
