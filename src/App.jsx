@@ -167,7 +167,7 @@ function App() {
           setCurrentPlayer(nextPlayer)
           setIsExtraTurn(false)
           setIsAITurn(false)
-        }, 1500)
+        }, 500)
       } else if (dice === 6) {
         setIsExtraTurn(true)
         if (settings.soundEnabled) play('move')
@@ -188,7 +188,7 @@ function App() {
     const rollInterval = setInterval(() => {
       setDiceValue(rollDice())
       rollCount++
-      if (rollCount >= 8) {
+      if (rollCount >= 25) {
         clearInterval(rollInterval)
         finalizeMove()
       }
@@ -236,7 +236,7 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-slate-950 p-2">
+    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 p-2">
       <style>{`
         @keyframes confetti { 0% { transform: translateY(0) rotate(0deg); opacity: 1; } 100% { transform: translateY(100vh) rotate(720deg); opacity: 0; } }
         .animate-confetti { animation: confetti 3s ease-out forwards; }
@@ -272,7 +272,7 @@ function App() {
           >
             ← Lobby
           </button>
-          <h1 className="text-lg md:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-500 drop-shadow-lg animate-pulse">
+          <h1 className="text-lg md:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-500 to-red-500 drop-shadow-lg animate-pulse">
             Ular Manjat Dinding
           </h1>
           <button
@@ -284,7 +284,7 @@ function App() {
         </header>
 
         <div className="flex flex-wrap gap-2 mb-3">
-          <div className={`bg-gradient-to-br from-purple-600 to-indigo-600 rounded-xl p-3 shadow-lg ${settings.animationsEnabled ? 'animate-glow' : ''}`}>
+          <div className={`bg-gradient-to-br from-blue-600 to-slate-600 rounded-xl p-3 shadow-lg ${settings.animationsEnabled ? 'animate-glow' : ''}`}>
             <p className="text-white/70 text-xs mb-1">🎯 Giliran</p>
             <div className="flex items-center gap-2">
               <div className={`w-6 h-6 rounded-full ${getPlayerColorClass(players[currentPlayer]?.color)} shadow-lg`}></div>
@@ -346,7 +346,7 @@ function App() {
           <div className="flex justify-center mb-3">
             <button
               onClick={handleRollDice}
-              className="px-10 py-4 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white rounded-2xl font-bold text-xl shadow-2xl hover:from-blue-400 hover:via-purple-400 hover:to-pink-400 transition-all hover:scale-105 active:scale-95 animate-pulse"
+              className="px-10 py-4 bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 text-white rounded-2xl font-bold text-xl shadow-2xl hover:from-amber-400 hover:via-orange-400 hover:to-red-400 transition-all hover:scale-105 active:scale-95 animate-pulse"
             >
               🎲 LEMPAR DADU 🎲
             </button>
@@ -355,7 +355,7 @@ function App() {
 
         {!isRolling && gameStatus === 'playing' && isCurrentPlayerAI && (
           <div className="flex justify-center mb-3">
-            <div className="px-6 py-3 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-2xl text-white font-bold animate-pulse">
+            <div className="px-6 py-3 bg-gradient-to-r from-slate-600 to-slate-700 rounded-2xl text-white font-bold animate-pulse">
               🤖 AI sedang berpikir...
             </div>
           </div>
@@ -369,7 +369,7 @@ function App() {
               lastMove.type === 'snake' ? 'bg-gradient-to-r from-red-500 to-rose-600 text-white' :
               lastMove.type === 'ladder' ? 'bg-gradient-to-r from-green-400 to-emerald-500 text-white' :
               lastMove.dice === 6 ? 'bg-gradient-to-r from-yellow-400 to-amber-500 text-white' :
-              'bg-gradient-to-r from-blue-500 to-purple-500 text-white'
+              'bg-gradient-to-r from-blue-500 to-cyan-500 text-white'
             }`}>
               {lastMove.type === 'won' ? `🎉 ${players[lastMove.player]?.name} MENANG! 🎉` :
                 lastMove.type === 'bounce' ? `🔙 Mundur! ${lastMove.from} → ${lastMove.to}` :

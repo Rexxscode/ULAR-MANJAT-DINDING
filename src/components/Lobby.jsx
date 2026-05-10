@@ -36,12 +36,12 @@ export default function Lobby({ players, setPlayers, onStartGame, onOpenSettings
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-900 via-purple-900 to-indigo-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-800 via-slate-900 to-slate-950 flex items-center justify-center p-4">
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
           <div className="text-6xl md:text-7xl mb-4 animate-bounce">🎲</div>
           <h1 className="text-4xl md:text-5xl font-black text-white mb-2">
-            <span className="bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-amber-400 via-orange-500 to-red-500 bg-clip-text text-transparent">
               Ular Manjat Dinding
             </span>
           </h1>

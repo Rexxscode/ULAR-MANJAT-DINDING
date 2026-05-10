@@ -33,14 +33,6 @@ export default function SettingsModal({ isOpen, onClose, settings, onSave, playe
     setLocalPlayers(newPlayers)
   }
 
-  SettingsModal.propTypes = {
-    isOpen: PropTypes.bool.isRequired,
-    onClose: PropTypes.func.isRequired,
-    settings: PropTypes.object.isRequired,
-    onSave: PropTypes.func.isRequired,
-    players: PropTypes.array.isRequired,
-  }
-
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-6 w-full max-w-md shadow-2xl border border-white/10 max-h-[90vh] overflow-y-auto">
@@ -64,14 +56,14 @@ export default function SettingsModal({ isOpen, onClose, settings, onSave, playe
                   type="text"
                   value={player.name}
                   onChange={(e) => updatePlayerName(index, e.target.value)}
-                  className="flex-1 bg-slate-700 text-white px-3 py-2 rounded-lg border border-slate-600 focus:border-purple-500 focus:outline-none"
+                  className="flex-1 bg-slate-700 text-white px-3 py-2 rounded-lg border border-slate-600 focus:border-blue-500 focus:outline-none"
                   placeholder={`Pemain ${index + 1}`}
                 />
                 <button
                   onClick={() => toggleAI(index)}
                   className={`px-2 py-1 rounded-lg text-xs font-bold transition-all ${
                     player.isAI
-                      ? 'bg-purple-500 text-white'
+                      ? 'bg-blue-600 text-white'
                       : 'bg-slate-600 text-white/60'
                   }`}
                 >
@@ -133,4 +125,12 @@ export default function SettingsModal({ isOpen, onClose, settings, onSave, playe
       </div>
     </div>
   )
+}
+
+SettingsModal.propTypes = {
+  isOpen: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  settings: PropTypes.object.isRequired,
+  onSave: PropTypes.func.isRequired,
+  players: PropTypes.array.isRequired,
 }
