@@ -265,37 +265,39 @@ setLastMove({ player: currentPlayer, from: currentP.position, to: newPosition, d
       newPlayers[currentPlayer] = { ...currentP, position: newPosition }
       setPlayers(newPlayers)
 
-      if (moveType !== 'won') {
-        const isSix = dice === 6
-        if (isSix) {
-          setIsExtraTurn(true)
-          if (settings.soundEnabled) play('move')
-          if (playMode === 'multiplayer') {
-            syncGameState({ players: newPlayers, diceValue: dice, lastMove: { player: currentPlayer, from: currentP.position, to: newPosition, dice, type: moveType } })
-          }
-        } else {
-          const nextPlayer = (currentPlayer + 1) % players.length
-          setIsExtraTurn(false)
-          if (playMode === 'multiplayer') {
-            syncGameState({ players: newPlayers, diceValue: dice, lastMove: { player: currentPlayer, from: currentP.position, to: newPosition, dice, type: moveType } })
-            if (isHost) {
-              syncTurn(nextPlayer)
-              setTimeout(() => {
-                setCurrentPlayer(nextPlayer)
-                setIsAITurn(false)
-              }, 500)
-            } else {
-              setIsAITurn(false)
-            }
-          } else {
+      // Only give extra turn if: got 6 AND didn't win AND didn't bounce
+      const gotSix = dice === 6
+      const isValidExtraTurn = gotSix && moveType !== 'won' && moveType !== 'bounce'
+      
+      if (isValidExtraTurn) {
+        setIsExtraTurn(true)
+        if (settings.soundEnabled) play('move')
+        if (playMode === 'multiplayer') {
+          syncGameState({ players: newPlayers, diceValue: dice, lastMove: { player: currentPlayer, from: currentP.position, to: newPosition, dice, type: moveType } })
+        }
+      } else {
+        setIsExtraTurn(false)
+        if (playMode === 'multiplayer') {
+          syncGameState({ players: newPlayers, diceValue: dice, lastMove: { player: currentPlayer, from: currentP.position, to: newPosition, dice, type: moveType } })
+          if (isHost) {
+            const nextPlayer = (currentPlayer + 1) % players.length
+            syncTurn(nextPlayer)
             setTimeout(() => {
               setCurrentPlayer(nextPlayer)
               setIsAITurn(false)
             }, 500)
+          } else {
+            setIsAITurn(false)
           }
+        } else {
+          const nextPlayer = (currentPlayer + 1) % players.length
+          setTimeout(() => {
+            setCurrentPlayer(nextPlayer)
+            setIsAITurn(false)
+          }, 500)
         }
       }
-  }, [players, currentPlayer, isExtraTurn, settings.soundEnabled, play, playMode, isHost, syncTurn, syncGameState])
+  }, [players, currentPlayer, settings.soundEnabled, play, playMode, isHost, syncTurn, syncGameState])
 
   const handleRollDice = useCallback(() => {
     if (gameStatus !== 'playing') return
