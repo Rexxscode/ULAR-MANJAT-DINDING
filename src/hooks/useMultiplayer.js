@@ -23,8 +23,8 @@ export function useMultiplayer() {
   const [gameStarted, setGameStarted] = useState(false)
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0)
   const [gameState, setGameState] = useState(null)
+  const [myPlayerId, setMyPlayerId] = useState(null)
 
-  const myPlayerId = useRef(null)
   const roomRef = useRef(null)
   const playersRef = useRef([])
 
@@ -37,7 +37,7 @@ export function useMultiplayer() {
       try {
         const code = generateCode()
         const playerId = generatePlayerId()
-        myPlayerId.current = playerId
+        setMyPlayerId(playerId)
 
         const roomData = {
           code,
@@ -82,7 +82,7 @@ export function useMultiplayer() {
       try {
         const codeUpper = code.toUpperCase()
         const playerId = generatePlayerId()
-        myPlayerId.current = playerId
+        setMyPlayerId(playerId)
 
         const playerDataWithId = {
           ...playerData,
@@ -197,8 +197,8 @@ export function useMultiplayer() {
   }, [roomCode])
 
   const leaveRoom = useCallback(() => {
-    if (roomCode && myPlayerId.current) {
-      const playerPath = ref(db, `rooms/${roomCode}/players/${myPlayerId.current}`)
+    if (roomCode && myPlayerId) {
+      const playerPath = ref(db, `rooms/${roomCode}/players/${myPlayerId}`)
       remove(playerPath)
 
       // If no more players, clean up room
@@ -212,7 +212,7 @@ export function useMultiplayer() {
     setPlayers([])
     setIsHost(false)
     setGameStarted(false)
-    myPlayerId.current = null
+    setMyPlayerId(null)
     playersRef.current = []
     roomRef.current = null
   }, [roomCode, isHost])
@@ -240,6 +240,7 @@ export function useMultiplayer() {
     gameStarted,
     currentPlayerIndex,
     gameState,
+    myPlayerId,
     createRoom,
     joinRoom,
     startGame,

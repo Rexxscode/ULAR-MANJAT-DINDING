@@ -54,7 +54,7 @@ function App() {
   const [myPlayerIndex, setMyPlayerIndex] = useState(0)
   const [otherPlayerMoving, setOtherPlayerMoving] = useState(false)
 
-  const { roomCode, players: mpServerPlayers, isHost, gameStarted, currentPlayerIndex, gameState: mpGameState, createRoom, joinRoom, startGame: mpStartGame, updateGameState, nextTurn: mpNextTurn, sendMove: mpSendMove, leaveRoom, syncTurn, syncGameState } = useMultiplayer()
+  const { roomCode, players: mpServerPlayers, isHost, gameStarted, currentPlayerIndex, gameState: mpGameState, myPlayerId, createRoom, joinRoom, startGame: mpStartGame, updateGameState, nextTurn: mpNextTurn, sendMove: mpSendMove, leaveRoom, syncTurn, syncGameState } = useMultiplayer()
 
   const { play, setEnabled } = useSound()
   const aiTimeoutRef = useRef(null)
@@ -74,8 +74,14 @@ function App() {
   useEffect(() => {
     if (mpServerPlayers.length > 0) {
       setMpPlayers(mpServerPlayers)
+      if (myPlayerId) {
+        const idx = mpServerPlayers.findIndex(p => p.id === myPlayerId)
+        if (idx !== -1) {
+          setMyPlayerIndex(idx)
+        }
+      }
     }
-  }, [mpServerPlayers])
+  }, [mpServerPlayers, myPlayerId])
 
   useEffect(() => {
     if (roomCode) {
